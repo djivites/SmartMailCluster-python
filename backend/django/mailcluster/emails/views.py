@@ -1,52 +1,65 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .services import send_email, reply_email, forward_email
 from .models import Email
+from .graph import Graph
+
+# create a single Graph instance
+graph = Graph()
 
 @api_view(['POST'])
 def send_email_view(request):
     data = request.data
-    email = send_email(
-        sender_email=data['sender'],
-        receiver_email=data['receiver'],
+    email = graph.sendEmail(
+        from_addr=data['sender'],
+        to_addr=data['receiver'],
         subject=data['subject'],
         body=data['body']
     )
-    return Response({"message": "Email sent", "email_id": email.id, "thread_id": email.thread.id})
+    graph.showgraph()
+    return Response({
+        "message": "Email sent",
+        "email_id": email.email_id,
+    })
 
 @api_view(['POST'])
 def reply_email_view(request):
     data = request.data
-    reply = reply_email(
-        parent_email_id=data['parent_email'],
-        sender_email=data['sender'],
-        receiver_email=data['receiver'],
+    reply = graph.replyEmail(
+        email_id=data['parent_email'],
+        from_addr=data['sender'],
+        to_addr=data['receiver'],
         body=data['body']
     )
-    return Response({"message": "Reply sent", "reply_id": reply.id, "thread_id": reply.thread.id})
+    if not reply:
+        return Response({"error": "Original email not found"}, status=404)
+    
+    graph.showgraph()
+    return Response({
+        "message": "Reply sent",
+        "reply_id": reply.email_id,
+    })
 
 @api_view(['POST'])
 def forward_email_view(request):
     data = request.data
-    fwd = forward_email(
-        parent_email_id=data['parent_email'],
-        sender_email=data['sender'],
-        receiver_email=data['receiver'],
+    fwd = graph.forwardEmail(
+        email_id=data['parent_email'],
+        from_addr=data['sender'],
+        to_addr=data['receiver'],
         body=data['body']
     )
-    return Response({"message": "Forward sent", "forward_id": fwd.id, "thread_id": fwd.thread.id})
+    if not fwd:
+        return Response({"error": "Original email not found"}, status=404)
+    graph.showgraph()
+    return Response({
+        "message": "Forward sent",
+        "forward_id": fwd.email_id,
+    })
 
 @api_view(['GET'])
-def view_thread_view(request, thread_id):
-    emails = Email.objects.filter(thread_id=thread_id).order_by('created_at')
-    result = [
-        {
-            "id": e.id,
-            "subject": e.subject,
-            "body": e.body,
-            "from": e.sender.email,
-            "to": e.receiver.email
-        }
-        for e in emails
-    ]
-    return Response({"thread_id": thread_id, "emails": result})
+def view_thread_view(request, root_email_id):
+    result = graph.viewThread(root_email_id)
+    return Response({
+        "root_email_id": root_email_id,
+        "emails": result
+    })

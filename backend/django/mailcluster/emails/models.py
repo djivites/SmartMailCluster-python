@@ -1,24 +1,18 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-class Thread(models.Model):
-    """Each conversation thread (like your nextThreadId in C++)."""
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Thread {self.id}"
-
 class Email(models.Model):
-    """Represents one email in the system."""
-    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name="sent_emails")
-    receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="received_emails")
+    email_id = models.AutoField(primary_key=True)   # custom explicit ID
+    sender = models.CharField(max_length=255)       # or ForeignKey(User) if you have User model
+    receiver = models.CharField(max_length=255)
     subject = models.CharField(max_length=255)
     body = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    # Graph / Thread relationships
-    thread = models.ForeignKey(Thread, on_delete=models.CASCADE, related_name="emails")
-    parent_email = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name="replies")
+    thread_id = models.IntegerField()
+    parent_email = models.ForeignKey(
+        "self", null=True, blank=True,
+        on_delete=models.SET_NULL,
+        related_name="children"
+    )
 
     def __str__(self):
-        return f"Email {self.id} | {self.subject}"
+        return f"Email {self.email_id}: {self.sender} → {self.receiver}"
