@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Email
 from .graph import Graph
-
+from .cluster import Cluster
 # create a single Graph instance
 graph = Graph()
 
@@ -62,4 +62,12 @@ def view_thread_view(request, root_email_id):
     return Response({
         "root_email_id": root_email_id,
         "emails": result
+    })
+
+@api_view(['GET'])
+def cluster_emails_view(request):
+    cluster = Cluster()
+    email_clusters=cluster.cluster_emails(graph)
+    return Response({
+        "clusters":{str(root):members for root, members in email_clusters.items()}
     })

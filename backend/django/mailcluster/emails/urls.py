@@ -6,4 +6,5 @@ urlpatterns = [
     path('reply/', views.reply_email_view),
     path('forward/',views.forward_email_view),
     path('thread/<int:root_email_id>/', views.view_thread_view),
+    path('emailcluster/',views.cluster_emails_view)
 ]
