@@ -71,3 +71,4 @@ def cluster_emails_view(request):
     return Response({
         "clusters":{str(root):members for root, members in email_clusters.items()}
     })
+
