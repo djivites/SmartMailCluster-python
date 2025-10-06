@@ -7,7 +7,7 @@ class DisjointSet:
         # size[i]   = size for union by size
         self.parent = [i for i in range(n + 1)]
         self.rank = [0] * (n + 1)
-        self.size = [1] * (n + 1)
+        #self.size = [1] * (n + 1)
 
     def find_upar(self, node: int) -> int:
         """Find ultimate parent with path compression"""
@@ -31,16 +31,4 @@ class DisjointSet:
             self.parent[ulp_v] = ulp_u
             self.rank[ulp_u] += 1
 
-    def union_by_size(self, u: int, v: int):
-        """Union by size"""
-        ulp_u = self.find_upar(u)
-        ulp_v = self.find_upar(v)
-        if ulp_u == ulp_v:
-            return
-
-        if self.size[ulp_u] < self.size[ulp_v]:
-            self.parent[ulp_u] = ulp_v
-            self.size[ulp_v] += self.size[ulp_u]
-        else:
-            self.parent[ulp_v] = ulp_u
-            self.size[ulp_u] += self.size[ulp_v]
+ 

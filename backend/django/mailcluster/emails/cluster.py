@@ -5,7 +5,7 @@ from .disjoint_set import DisjointSet
 from .models import Email
 
 class Cluster:
-    def __init__(self, threshold=2):
+    def __init__(self, threshold=5):
         """
         threshold: minimum number of shared words to consider two emails in same cluster
         """
