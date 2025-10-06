@@ -2,7 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from .models import Email
 from .graph import Graph
-
+from .cluster import Cluster
 # create a single Graph instance
 graph = Graph()
 
@@ -32,6 +32,8 @@ def reply_email_view(request):
     )
     if not reply:
         return Response({"error": "Original email not found"}, status=404)
+    if reply == "ERROR":
+        return Response({"error": "Invalid sender/receiver for reply"}, status=400)
     
     graph.showgraph()
     return Response({
@@ -48,6 +50,8 @@ def forward_email_view(request):
         to_addr=data['receiver'],
         body=data['body']
     )
+    if fwd == "ERROR":
+        return Response({"error": "Invalid sender/receiver for forward"}, status=400)
     if not fwd:
         return Response({"error": "Original email not found"}, status=404)
     graph.showgraph()
@@ -63,3 +67,56 @@ def view_thread_view(request, root_email_id):
         "root_email_id": root_email_id,
         "emails": result
     })
+
+@api_view(['GET'])
+def cluster_emails_view(request):
+    cluster = Cluster()
+    email_clusters = cluster.cluster_emails(graph)
+
+    # Convert IDs into full email details
+    clusters_with_data = {}
+    for root, members in email_clusters.items():
+        clusters_with_data[str(root)] = list(
+            Email.objects.filter(email_id__in=members).values(
+                'email_id', 'sender', 'receiver', 'subject', 'body', 'parent_email_id', 'thread_id'
+            )
+        )
+
+    return Response({
+        "clusters": clusters_with_data
+    })
+
+
+
+@api_view(['GET'])
+def view_all_emails(request):
+    emails = Email.objects.all().values(
+        'email_id', 'sender', 'receiver', 'subject', 'body', 'parent_email_id', 'thread_id'
+    )
+    return Response({
+        "emails": list(emails)
+    })
+
+@api_view(['GET'])
+def view_all_threads(request):
+    """
+    Returns a list of all threads with root email info.
+    Each thread includes:
+        - thread_id
+        - root_email (sender, receiver, subject, body)
+    """
+    # Get all root emails (emails with no parent)
+    root_emails = Email.objects.filter(parent_email__isnull=True).values(
+        'email_id', 'sender', 'receiver', 'subject', 'body', 'thread_id'
+    )
+    
+    threads = []
+    for root in root_emails:
+        threads.append({
+            "thread_id": root['thread_id'],
+            "root_email": root
+        })
+    
+    return Response({"threads": threads})
+
+
